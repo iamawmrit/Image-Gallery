@@ -1,0 +1,13 @@
+node_modules
+dist
+build
+release
+.DS_Store
+.vscode
+.idea
+*.log
+.env
+.npmrc
+thumbs.db
+desktop/dist
+desktop/build
