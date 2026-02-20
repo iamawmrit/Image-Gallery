@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery</title>
+  <link rel="stylesheet" href="styles/variables.css">
+  <link rel="stylesheet" href="gallery.css">
+  <link rel="stylesheet" href="viewer.css">
+  <link rel="stylesheet" href="editor.css">
+  <style>
+    .icon {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .icon-lg {
+      width: 48px;
+      height: 48px;
+    }
+
+    .icon-xl {
+      width: 64px;
+      height: 64px;
+    }
+
+    .btn .icon {
+      margin-right: 4px;
+    }
+
+    .btn-icon .icon {
+      margin-right: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-overlay" style="display: flex;">
+    <div class="loading-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round" class="icon-lg">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+      </svg>
+    </div>
+    <div class="loading-title">PhotoGallery</div>
+    <div class="loading-subtitle">Loading your photos...</div>
+    <div class="spinner" style="margin-top:8px"></div>
+    <button onclick="document.getElementById('loading-overlay').style.display='none'"
+      style="margin-top: 20px; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #888; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;">Skip
+      Loading</button>
+  </div>
+
+  <!-- Main App -->
+  <div id="app">
+    <!-- Toolbar -->
+    <div id="toolbar">
+      <div class="traffic-lights-space"></div>
+
+      <button class="btn btn-icon" id="btn-toggle-sidebar" data-tooltip="Toggle Sidebar (⌘B)" title="Toggle Sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+
+      <button class="btn btn-primary" id="btn-add-folder" data-tooltip="Add Folder (⌘O)" style="margin-left: 12px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Add Folder
+      </button>
+
+      <div class="divider" style="margin: 0 16px;"></div>
+
+      <div class="control-group">
+        <select id="sort-select" title="Sort by">
+          <option value="modified">Date Modified</option>
+          <option value="created">Date Created</option>
+          <option value="name">Name</option>
+          <option value="size">Size</option>
+          <option value="type">Type</option>
+        </select>
+
+        <button class="btn btn-icon" id="btn-sort-order" data-tooltip="Toggle Sort Order" title="Sort Order">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <polyline points="19 12 12 19 5 12"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <div class="divider" style="margin: 0 16px;"></div>
+
+      <div class="control-group">
+        <span style="font-size:12px;color:var(--text-muted);margin-right:8px">Size</span>
+        <input type="range" id="thumb-size-slider" min="80" max="400" value="200" title="Thumbnail Size">
+      </div>
+
+      <div class="toolbar-spacer"></div>
+
+      <div
+        style="margin-right: 12px; display: flex; align-items: center; transform: scale(0.8); transform-origin: right center;">
+        <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js"
+          data-name="bmc-button" data-slug="awmrit" data-color="#FFDD00" data-emoji="☕" data-font="Cookie"
+          data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000"
+          data-coffee-color="#ffffff"></script>
+      </div>
+
+      <div class="search-wrapper">
+        <span class="search-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon" style="width:14px;height:14px">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </span>
+        <input type="text" id="search-input" placeholder="Search Photos..." autocomplete="off" spellcheck="false">
+      </div>
+
+      <button class="btn btn-icon" id="btn-scan" data-tooltip="Refresh / Scan" title="Scan" style="margin-left: 8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+      </button>
+
+      <button class="btn btn-icon" id="btn-export" title="Export" style="margin-left: 4px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+      <!-- Sidebar -->
+      <div id="sidebar">
+        <div class="sidebar-header">
+          <span>Folders</span>
+          <button class="btn btn-icon" id="btn-add-folder-sidebar" style="padding:2px;width:20px;height:20px"
+            title="Add Folder">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon" style="width:12px;height:12px">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+        <div id="folder-tree"></div>
+      </div>
+
+      <!-- Gallery -->
+      <div id="gallery-container">
+        <div id="gallery-scroll">
+          <div id="gallery-grid"></div>
+          <div id="empty-state" style="display:none">
+            <div class="empty-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-xl">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+            </div>
+            <div class="empty-title">No Photos Found</div>
+            <div class="empty-desc">Click "Add Folder" to add a folder, or click the scan button to search for photos on
+              your Mac.</div>
+            <button class="btn btn-primary" id="btn-empty-scan">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+              Scan for Photos
+            </button>
+          </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div id="statusbar">
+          <div class="status-item">
+            <span id="status-count">0 photos</span>
+          </div>
+          <div class="status-separator">·</div>
+          <div class="status-item">
+            <span id="status-selected">None selected</span>
+          </div>
+          <div class="status-separator">·</div>
+          <div class="status-item">
+            <span id="status-folder">All Photos</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scan Progress -->
+  <div id="scan-progress">
+    <div class="scan-progress-title">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon" style="vertical-align:bottom">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      Scanning for photos...
+    </div>
+    <div class="scan-progress-bar">
+      <div class="scan-progress-fill"></div>
+    </div>
+    <div class="scan-progress-text" id="scan-progress-text">Searching...</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+      Found: <span id="scan-count">0</span> photos
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div id="context-menu">
+    <div class="ctx-item" id="ctx-open">
+      <span class="ctx-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg></span> Open
+    </div>
+    <div class="ctx-item" id="ctx-edit">
+      <span class="ctx-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+        </svg></span> Edit
+    </div>
+    <div class="ctx-separator"></div>
+    <div class="ctx-item" id="ctx-finder">
+      <span class="ctx-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg></span> Show in Finder
+    </div>
+    <div class="ctx-item" id="ctx-copy-path">
+      <span class="ctx-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+        </svg></span> Copy Path
+    </div>
+    <div class="ctx-item" id="ctx-copy-image">
+      <span class="ctx-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <circle cx="8.5" cy="8.5" r="1.5"></circle>
+          <polyline points="21 15 16 10 5 21"></polyline>
+        </svg></span> Copy Image
+    </div>
+    <div class="ctx-separator"></div>
+    <div class="ctx-item danger" id="ctx-delete">
+      <span class="ctx-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        </svg></span> Move to Trash
+    </div>
+  </div>
+
+  <!-- Image Viewer (overlay) -->
+  <div id="viewer" style="display:none"></div>
+
+  <!-- Editor Overlay -->
+  <div id="editor-overlay" style="display:none">
+    <!-- Top Header -->
+    <div id="editor-header">
+      <button class="editor-btn" id="editor-btn-cancel">Cancel</button>
+      <div class="editor-spacer"></div>
+      <div id="editor-history-controls">
+        <button class="editor-btn icon-only" id="editor-btn-undo" title="Undo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7v6h6" />
+            <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13" />
+          </svg>
+        </button>
+        <button class="editor-btn icon-only" id="editor-btn-redo" title="Redo">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 7v6h-6" />
+            <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 3.7" />
+          </svg>
+        </button>
+      </div>
+      <button class="editor-btn primary" id="editor-btn-save">Save</button>
+    </div>
+
+    <!-- Canvas Area -->
+    <div id="editor-canvas-container">
+      <canvas id="editor-canvas"></canvas>
+    </div>
+
+    <!-- Bottom Controls -->
+    <div id="editor-controls">
+      <!-- Sub Toolbar (Contextual Options) -->
+      <div id="editor-sub-toolbar">
+        <!-- Dynamic Content -->
+      </div>
+
+      <!-- Main Navigation -->
+      <div id="editor-main-toolbar">
+        <button class="editor-nav-btn" data-mode="adjust">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+            </path>
+          </svg>
+          Adjust
+        </button>
+        <button class="editor-nav-btn" data-mode="crop">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2v14a2 2 0 0 0 2 2h14" />
+            <path d="M18 22V8a2 2 0 0 0-2-2H2" />
+          </svg>
+          Crop
+        </button>
+        <button class="editor-nav-btn" data-mode="filter">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          Filter
+        </button>
+        <button class="editor-nav-btn" data-mode="draw">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+            <path d="M2 2l7.586 7.586"></path>
+            <circle cx="11" cy="11" r="2"></circle>
+          </svg>
+          Draw
+        </button>
+        <button class="editor-nav-btn" data-mode="text">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7V4h16v3" />
+            <path d="M9 20h6" />
+            <path d="M12 4v16" />
+          </svg>
+          Text
+        </button>
+        <button class="editor-nav-btn" data-mode="export">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Export
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Scripts -->
+  <script src="utils.js"></script>
+  <script src="context-menu.js"></script>
+  <script src="sidebar.js"></script>
+  <script src="search.js"></script>
+  <script src="gallery.js"></script>
+  <script src="viewer.js"></script>
+  <script src="libs/fabric.min.js"></script>
+  <script src="editor.js"></script>
+  <script data-name="BMC-Widget" data-cfasync="false" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js"
+    data-id="awmrit" data-description="Support me on Buy me a coffee!"
+    data-message="Thank You for using this Gallery! Please support me. this is made by solo developer."
+    data-color="#5F7FFF" data-position="Right" data-x_margin="18" data-y_margin="18"></script>
+</body>
+
+</html>

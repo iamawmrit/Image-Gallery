@@ -1,0 +1,61 @@
+appId: com.awmrit.gallery
+productName: Gallery
+copyright: Copyright © 2026 awmrit.com
+
+directories:
+  output: dist
+  buildResources: assets
+
+files:
+  - src/main/**/*
+  - src/renderer/**/*
+  - src/preload.cjs
+  - package.json
+
+win:
+  target: nsis
+  icon: assets/icon.png
+  legalTrademarks: awmrit.com
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  installerIcon: assets/icon.png
+  uninstallerIcon: assets/icon.png
+  uninstallDisplayName: Gallery
+  license: LICENSE
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Gallery
+  artifactName: ${productName}-Setup-${version}.${ext}
+
+mac:
+  category: public.app-category.photography
+  icon: assets/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  target:
+    - dmg
+    - pkg
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
+dmg:
+  title: Gallery
+  icon: assets/icon.icns
+  window:
+    width: 540
+    height: 380
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+pkg:
+  installLocation: /Applications
+  allowAnywhere: true
+  isRelocatable: false
+  overwriteAction: upgrade
