@@ -86,10 +86,18 @@ function escapeHtml(str) {
     return div.innerHTML
 }
 
-// Convert file:// path to src usable in img tags
+// Convert file path to src usable in img tags via gallery:// custom protocol
 function filePathToSrc(filePath) {
     if (!filePath) return ''
-    return 'gallery://' + filePath.replace(/#/g, '%23').replace(/\?/g, '%3F')
+    // Normalize Windows backslashes to forward slashes, then encode special URL chars.
+    // Use triple-slash (gallery:///) so the path becomes the URL pathname and the
+    // Windows drive letter colon (e.g. C:) is NOT mis-parsed as a host:port pair.
+    const normalized = filePath
+        .replace(/\\/g, '/')
+        .replace(/#/g, '%23')
+        .replace(/\?/g, '%3F')
+        .replace(/ /g, '%20')
+    return 'gallery:///' + normalized
 }
 
 // Simple event emitter

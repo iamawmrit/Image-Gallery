@@ -2,7 +2,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-import { app, BrowserWindow, Menu, dialog, shell, ipcMain, protocol } from 'electron'
+import { app, BrowserWindow, Menu, dialog, shell, ipcMain, protocol, net } from 'electron'
 import { clipboard, nativeImage } from 'electron'
 import path from 'path'
 import fs from 'fs'
@@ -12,6 +12,20 @@ import { initDatabase } from './database.js'
 import { initWatcher } from './watcher.js'
 
 app.name = 'Gallery'
+
+// Register custom protocol scheme before app is ready (required for newer Electron versions)
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'gallery',
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      bypassCSP: false
+    }
+  }
+])
 
 console.log('Desktop App: Starting...');
 
@@ -96,9 +110,24 @@ function createWindow() {
 async function init() {
   console.log('Desktop App: Init...');
   try {
-    protocol.registerFileProtocol('gallery', (request, callback) => {
-      const url = request.url.substr(10)
-      callback({ path: decodeURI(url) })
+    // Register protocol handler using the newer API
+    protocol.handle('gallery', (request) => {
+      try {
+        // Parse as a standard URL so the pathname is cleanly extracted.
+        // filePathToSrc builds URLs like gallery:///C:/path/to/file.jpg
+        // so the pathname is /C:/path/to/file.jpg on Windows.
+        const parsed = new URL(request.url)
+        let filePath = decodeURIComponent(parsed.pathname)
+        // On Windows strip the leading slash before the drive letter: /C:/... → C:/...
+        if (process.platform === 'win32') {
+          filePath = filePath.replace(/^\/([A-Za-z]:)/, '$1')
+        }
+        console.log('Gallery protocol: Loading file:', filePath)
+        return net.fetch('file:///' + filePath)
+      } catch (e) {
+        console.error('Gallery protocol error:', e)
+        return new Response('Not found', { status: 404 })
+      }
     })
 
     await loadStore()
